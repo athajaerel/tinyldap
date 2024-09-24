@@ -1,0 +1,10 @@
+dn: olcDatabase=cn=config
+changetype: modify
+replace: olcTLSCertificateFile
+olcTLSCertificateFile: /etc/tls/ldaps.crt
+
+dn: olcDatabase=cn=config
+changetype: modify
+replace: olcTLSCertificateKeyFile
+olcTLSCertificateKeyFile: /etc/tls/ldaps.key
+

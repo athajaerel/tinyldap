@@ -39,8 +39,12 @@ COPY src/ /
 
 # Connect to container and run:
 # ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f /opt/config.ldif
+# ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f /opt/tls.ldif
 
-# TLS https://wiki.debian.org/LDAP/OpenLDAPSetup#Enabling_TLS.2FSSL
+# TODO: add some actual data
+
+# botan keygen >ldaps.key
+# botan gen_self_signed ./ldaps.key localhost >ldaps.crt
 
 EXPOSE 10389/tcp 10636/udp
 ENTRYPOINT ["/usr/sbin/slapd", "-d255", "-s255", "-4", "-h", "ldap://0.0.0.0:10389/ ldaps://0.0.0.0:10636/ ldapi:///"]
