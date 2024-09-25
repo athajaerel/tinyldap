@@ -19,12 +19,6 @@ ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
 COPY src/ /
 
-#ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f /opt/config.ldif
-
-# Test database:
-#ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
-#slaptest -u
-
 #RUN mkdir -p /stage2
 #RUN /opt/install.bash
 #RUN /opt/create_stage2.bash
@@ -37,14 +31,19 @@ COPY src/ /
 #ENV LD_LIBRARY_PATH="/usr/lib:/usr/lib/x86_64-linux-gnu:/lib:/lib/x86_64-linux-gnu:/lib64:/usr/lib64"
 #ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
+# botan keygen >ldaps.key
+# must have SANs per new norm
+# botan gen_self_signed ./ldaps.key localhost --dns=localhost --dns=ldap.k3s.lab >ldaps.crt
+
+# initContainer, or
 # Connect to container and run:
-# ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f /opt/config.ldif
-# ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f /opt/tls.ldif
+# /opt/install.bash
+
+# Test database:
+# ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
+# slaptest -u
 
 # TODO: add some actual data
-
-# botan keygen >ldaps.key
-# botan gen_self_signed ./ldaps.key localhost >ldaps.crt
 
 EXPOSE 10389/tcp 10636/udp
 ENTRYPOINT ["/usr/sbin/slapd", "-d255", "-s255", "-4", "-h", "ldap://0.0.0.0:10389/ ldaps://0.0.0.0:10636/ ldapi:///"]
