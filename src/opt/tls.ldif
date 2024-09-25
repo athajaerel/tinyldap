@@ -1,10 +1,42 @@
-dn: olcDatabase=cn=config
+dn: cn=config
 changetype: modify
-replace: olcTLSCertificateFile
-olcTLSCertificateFile: /etc/tls/ldaps.crt
+delete: olcTLSCACertificatePath
 
-dn: olcDatabase=cn=config
+dn: cn=config
 changetype: modify
-replace: olcTLSCertificateKeyFile
+delete: olcTLSCACertificateFile
+
+dn: cn=config
+changetype: modify
+delete: olcTLSCertificateKeyFile
+
+dn: cn=config
+changetype: modify
+add: olcTLSCertificateKeyFile
 olcTLSCertificateKeyFile: /etc/tls/ldaps.key
 
+dn: cn=config
+changetype: modify
+delete: olcTLSCertificateFile
+
+dn: cn=config
+changetype: modify
+add: olcTLSCertificateFile
+olcTLSCertificateFile: /etc/tls/ldaps.crt
+
+# OpenSSL format
+#dn: cn=config
+#changetype: modify
+#add: olcTLSCipherSuite
+#olcTLSCipherSuite: TLSv1+RSA:!NULL
+
+# GnuTLS format
+dn: cn=config
+changetype: modify
+add: olcTLSCipherSuite
+olcTLSCipherSuite: SECURE256:+SECURE128:-VERS-TLS-ALL:+VERS-TLS1.2:+VERS-DTLS1.2:-RSA:-DHE-DSS:-CAMELLIA-128-CBC:-CAMELLIA-256-CBC
+
+dn: cn=config
+changetype: modify
+add: olcTLSVerifyClient
+olcTLSVerifyClient: allow
