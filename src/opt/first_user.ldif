@@ -1,0 +1,24 @@
+# add the first or admin user
+
+# worry about templating later
+dn: uid=god,ou=users,dc=k3s,dc=lab
+changetype: add
+objectClass: account
+objectClass: top
+objectClass: shadowAccount
+objectClass: posixAccount
+cn: god
+gidNumber: 1000
+uidNumber: 1000
+homeDirectory: /mnt/olympus
+loginShell: /bin/bash
+gecos: The Almighty
+shadowLastChange: 0
+shadowMax: 0
+shadowWarning: 0
+
+# for service accounts, use the objectclasses:
+# objectClass: account
+# objectClass: simpleSecurityObject
+# objectClass: top
+# instead.
