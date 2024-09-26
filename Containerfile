@@ -11,7 +11,7 @@ RUN apt-file update
 FROM scratch AS stage2
 COPY --from=stage1 . /
 
-RUN mkdir -p /etc/ldap/slapd.d /etc/ldap
+RUN mkdir -p /etc/ldap/slapd.d /etc/tls
 
 ARG STAGE_PKGS
 
@@ -20,6 +20,12 @@ ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 COPY src/ /
 
 #RUN mkdir -p /stage2
+RUN botan keygen >/etc/tls/ldaps.key
+RUN botan gen_self_signed /etc/tls/ldaps.key localhost \
+	--dns=localhost \
+	--dns=ldap.k3s.lab \
+	>/etc/tls/ldaps.crt
+
 #RUN /opt/install.bash
 #RUN /opt/create_stage2.bash
 #RUN /opt/test_stage2.bash
@@ -30,10 +36,6 @@ COPY src/ /
 
 #ENV LD_LIBRARY_PATH="/usr/lib:/usr/lib/x86_64-linux-gnu:/lib:/lib/x86_64-linux-gnu:/lib64:/usr/lib64"
 #ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-
-# botan keygen >ldaps.key
-# must have SANs per new norm
-# botan gen_self_signed ./ldaps.key localhost --dns=localhost --dns=ldap.k3s.lab >ldaps.crt
 
 # initContainer, or
 # Connect to container and run:
