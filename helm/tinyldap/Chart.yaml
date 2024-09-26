@@ -1,0 +1,9 @@
+---
+apiVersion: v2
+name: tinyldap
+description: OpenLDAP v2.5.13
+type: application
+version: 0.0.1
+appVersion: "2.5.13"
+...
+# vim: set filetype=yaml

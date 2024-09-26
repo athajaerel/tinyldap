@@ -1,0 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: openldap-cert
+spec:
+  secretName: openldap-tls
+  dnsNames:
+    - "ldap.k3s.lab"
+# detect issuer? not possible, so this must be scripted
+# can we patch in the issuer later?
+  issuerRef:
+    name: k3s-amethyst-issuer
+    kind: ClusterIssuer
+...
+# vim: set filetype=yaml
