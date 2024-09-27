@@ -6,6 +6,5 @@ metadata:
 data:
   OLC_SUFFIX: {{ .Values.ldap.suffix }}
   OLC_ROOTDN: {{ .Values.ldap.rootDn }}
-  OLC_ACCESS: '{0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external, cn=auth" read by dn.base="${OLC_ROOTDN}" read by * none'
 ...
 # vim: set filetype=yaml

@@ -1,4 +1,22 @@
 ---
+cert:
+  dnsNames:
+    - "ldap.k3s.lab"
+  # detect issuer? not possible, so this must be scripted
+  # can we patch in the issuer later?
+  issuerRefName: 'k3s-amethyst-issuer'
 
+ldap:
+  suffix: dc=k3s,dc=lab
+  rootDn: cn=admin,dc=k3s,dc=lab
+  ldap_port: 389
+  ldaps_port: 636
+
+storage:
+  megabytes: 500
+
+passwords:
+  # b64encode this?
+  admin: "{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
 ...
 # vim: set filetype=yaml
