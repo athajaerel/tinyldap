@@ -1,0 +1,269 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openldap-statefulset
+spec:
+  serviceName: "ldap-statefulset"
+  replicas: 1
+  restartPolicy: Always
+  selector:
+    matchLabels:
+      app: ldap-statefulset
+  template:
+    metadata:
+      labels:
+        app: ldap-statefulset
+    spec:
+      containers:
+      - name: my-app
+        image: nginx
+  volumes:
+  - name: ldap-tls
+    secret:
+      secretName: ldap-tls
+  - name: ldap-pvc
+    persistentVolumeClaim:
+      claimName: ldap-pvc
+
+
+# ldap-admin
+
+
+spec:
+  volumes:
+  - name: krb5-conf
+    configMap:
+      name: krb5
+      items:
+      - key: krb5.conf
+        path: krb5.conf
+#  - name: kdc-conf
+#    configMap:
+#      name: krb5
+#      items:
+#      - key: kdc.conf
+#        path: kdc.conf
+  - name: kadm5-acl
+    configMap:
+      name: krb5
+      items:
+      - key: kadm5.acl
+        path: kadm5.acl
+
+  initContainers:
+  - name: tinykerb-init-1
+    image: localhost/tinykerb-kdc
+    imagePullPolicy: Never
+    envFrom:
+    - configMapRef:
+        name: kerberos-env
+    - configMapRef:
+        name: kerberos-init-env
+    - secretRef:
+        name: kerberos-admin-passwords
+    volumeMounts:
+    - name: krb5-conf
+      mountPath: /etc/krb5kdc
+      readOnly: true
+    - name: database-pvc
+      mountPath: /var/krb5kdc
+      readOnly: false
+    command:
+    - 'bash'
+    - '-c'
+    - '[ -e /var/krb5kdc/principal ] || kdb5_util cr
+eate -r ${REALM} -s -sf ${KRB5_STASH} -P ${PW_MASTER
+}'
+#  - name: tinykerb-init-2
+#    image: localhost/tinykerb-kdc
+#    imagePullPolicy: Never
+#    envFrom:
+#    - configMapRef:
+#        name: kerberos-env
+#    - configMapRef:
+#        name: kerberos-init-env
+#    - secretRef:
+#        name: kerberos-admin-passwords
+#    volumeMounts:
+#    - name: krb5-conf
+#      mountPath: /etc/krb5kdc
+#      readOnly: true
+#    - name: database-pvc
+#      mountPath: /var/krb5kdc
+#      readOnly: false
+#    command:
+#    - 'bash'
+#    - '-c'
+#    - '[ -e ${KRB5_STASH} ] || kdb5_util stash -f $
+{KRB5_STASH}'
+#'kadmin.local -p ${KADM_PRINC} ktadd -k ${KRB5_KTNA
+ME}'
+  containers:
+  - name: tinykerb-kdc-container
+    image: localhost/tinykerb-kdc
+    imagePullPolicy: Never
+    envFrom:
+    - configMapRef:
+        name: kerberos-env
+    volumeMounts:
+    - name: krb5-conf
+      mountPath: /etc/krb5kdc
+      readOnly: true
+#    - name: kdc-conf
+#      mountPath: /etc/krb5kdc
+#      readOnly: true
+    - name: kadm5-acl
+      mountPath: /var
+      readOnly: true
+    - name: tls-certs-secret
+      mountPath: /etc/tls
+      readOnly: true
+    - name: database-pvc
+      mountPath: /var/krb5kdc
+      readOnly: false
+#  - name: tinykerb-kadmind-container
+#    image: tinykerb-kadmind
+#    imagePullPolicy: IfNotPresent
+#    envFrom:
+#    - configMapRef:
+#        name: kerberos-env
+#    volumeMounts:
+#    - name: shared-data
+#      mountPath: /var/krb5kdc
+#    - name: krb5-conf
+#      mountPath: /etc
+#    - name: kdc-conf
+#      mountPath: /etc/krb5kdc
+#    - name: kadm5-acl
+#      mountPath: /var/krb5kdc
+
+
+
+
+
+#---
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: openldap-pod
+#spec:
+#  restartPolicy: Always
+#  volumes:
+#  - name: krb5-conf
+#    configMap:
+#      name: krb5
+#      items:
+#      - key: krb5.conf
+#        path: krb5.conf
+##  - name: kdc-conf
+##    configMap:
+##      name: krb5
+##      items:
+##      - key: kdc.conf
+##        path: kdc.conf
+#  - name: kadm5-acl
+#    configMap:
+#      name: krb5
+#      items:
+#      - key: kadm5.acl
+#        path: kadm5.acl
+#  - name: tls-certs-secret
+#    secret:
+#      secretName: kerberos-tls
+#  - name: database-pvc
+#    persistentVolumeClaim:
+#      claimName: kerberos-database-pvc
+#  initContainers:
+#  - name: tinykerb-init-1
+#    image: localhost/tinykerb-kdc
+#    imagePullPolicy: Never
+#    envFrom:
+#    - configMapRef:
+#        name: kerberos-env
+#    - configMapRef:
+#        name: kerberos-init-env
+#    - secretRef:
+#        name: kerberos-admin-passwords
+#    volumeMounts:
+#    - name: krb5-conf
+#      mountPath: /etc/krb5kdc
+#      readOnly: true
+#    - name: database-pvc
+#      mountPath: /var/krb5kdc
+#      readOnly: false
+#    command:
+#    - 'bash'
+#    - '-c'
+#    - '[ -e /var/krb5kdc/principal ] || kdb5_util cr
+#eate -r ${REALM} -s -sf ${KRB5_STASH} -P ${PW_MASTER
+#}'
+##  - name: tinykerb-init-2
+##    image: localhost/tinykerb-kdc
+##    imagePullPolicy: Never
+##    envFrom:
+##    - configMapRef:
+##        name: kerberos-env
+##    - configMapRef:
+##        name: kerberos-init-env
+##    - secretRef:
+##        name: kerberos-admin-passwords
+##    volumeMounts:
+##    - name: krb5-conf
+##      mountPath: /etc/krb5kdc
+##      readOnly: true
+##    - name: database-pvc
+##      mountPath: /var/krb5kdc
+##      readOnly: false
+##    command:
+##    - 'bash'
+##    - '-c'
+##    - '[ -e ${KRB5_STASH} ] || kdb5_util stash -f $
+#{KRB5_STASH}'
+##'kadmin.local -p ${KADM_PRINC} ktadd -k ${KRB5_KTNA
+#ME}'
+#  containers:
+#  - name: tinykerb-kdc-container
+#    image: localhost/tinykerb-kdc
+#    imagePullPolicy: Never
+#    envFrom:
+#    - configMapRef:
+#        name: kerberos-env
+#    volumeMounts:
+#    - name: krb5-conf
+#      mountPath: /etc/krb5kdc
+#      readOnly: true
+#    - name: kdc-conf
+#      mountPath: /etc/krb5kdc
+##      readOnly: true
+#    - name: kadm5-acl
+#      mountPath: /var
+#      readOnly: true
+#    - name: tls-certs-secret
+#      mountPath: /etc/tls
+#      readOnly: true
+# #   - name: database-pvc
+# ##     mountPath: /var/krb5kdc
+#      readOnly: false
+##  - name: tinykerb-kadmind-container
+##    image: tinykerb-kadmind
+##    imagePullPolicy: IfNotPresent
+##    envFrom:
+##    - configMapRef:
+##        name: kerberos-env
+##    volumeMounts:
+##    - name: shared-data
+##      mountPath: /var/krb5kdc
+##    - name: krb5-conf
+##      mountPath: /etc
+##    - name: kdc-conf
+##      mountPath: /etc/krb5kdc
+##    - name: kadm5-acl
+##      mountPath: /var/krb5kdc
+#...
+## vim: set filetype=yaml
+
+
+
+...
+# vim: set filetype=yaml
