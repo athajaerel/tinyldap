@@ -6,13 +6,15 @@ metadata:
 spec:
   ports:
   - name: ldap
-    port: 389
+    port: {{ .Values.ldap.ldap_port }}
     protocol: TCP
     targetPort: 10389
   - name: ldaps
-    port: 636
+    port: {{ .Values.ldap.ldaps_port }}
     protocol: TCP
     targetPort: 10636
+  # can either use a LoadBalancer or an ingress
+  # does ingress support non-HTTP traffic?
   type: ClusterIP
 ...
 # vim: set filetype=yaml

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: tinyldap-pod
+  name: openldap-pod
 spec:
   restartPolicy: Always
   volumes:
