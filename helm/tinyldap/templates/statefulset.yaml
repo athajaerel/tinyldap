@@ -1,0 +1,129 @@
+---
+# $ ldapsearch -x -H ldap://ldap.k3s.lab/ -b dc=admin,dc=k3s,dc=lab -D "cn=admin,dc=k3s,dc=lab" -W
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openldap
+spec:
+  serviceName: openldap-service
+#  restartPolicy: Always
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      volumes:
+      - name: openldap-tls
+        secret:
+          secretName: openldap-tls
+      - name: openldap-conf
+        configMap:
+          name: openldap-conf
+          items:
+          - key: ldap.conf
+            path: ldap.conf
+#      - name: config-ldif
+#        configMap:
+#          name: openldap-conf
+#          items:
+#          - key: config.ldif
+#            path: config.ldif
+      - name: config-bash
+        configMap:
+          name: openldap-conf
+          items:
+          - key: config.bash
+            path: config.bash
+      initContainers:
+      - name: openldap-copy-defaults-meta
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: openldap-pvc-meta
+          mountPath: /mnt
+        command:
+          - 'bash'
+          - '-c'
+          - 'tar cvpzf - /etc/ldap/slapd.d | tar xpzf - -C /mnt --strip-components=3'
+      - name: openldap-copy-defaults-data
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: openldap-pvc-data
+          mountPath: /mnt
+        command:
+          - 'bash'
+          - '-c'
+          - 'tar cvpzf - /var/lib/ldap | tar xpzf - -C /mnt --strip-components=3'
+      - name: openldap-configure-ldap
+        image: {{ .Values.image }}
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: openldap-pvc-meta
+          mountPath: /etc/ldap/slapd.d
+        - name: openldap-pvc-data
+          mountPath: /var/lib/ldap
+        - name: config-bash
+          mountPath: /opt
+        command:
+          - 'bash'
+          - '-c'
+          - 'bash /opt/config.bash'
+      containers:
+      - name: openldap
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10389
+          name: ldap
+        - containerPort: 10636
+          name: ldaps
+        volumeMounts:
+        - name: openldap-conf
+          mountPath: /etc/ldap
+        - name: openldap-pvc-meta
+          mountPath: /etc/ldap/slapd.d
+        - name: openldap-pvc-data
+          mountPath: /var/lib/ldap
+        - name: openldap-tls
+          mountPath: /etc/tls
+          readOnly: true
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -ec
+            - ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
+          failureThreshold: 2
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+  volumeClaimTemplates:
+  - metadata:
+      name: openldap-pvc-meta
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.meta_storage_mb }}Mi
+  - metadata:
+      name: openldap-pvc-data
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.data_storage_mb }}Mi
+...
+# vim: set filetype=yaml

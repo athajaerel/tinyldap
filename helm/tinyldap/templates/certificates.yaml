@@ -5,12 +5,9 @@ metadata:
   name: openldap-cert
 spec:
   secretName: openldap-tls
-  dnsNames:
-    - "ldap.k3s.lab"
-# detect issuer? not possible, so this must be scripted
-# can we patch in the issuer later?
+  dnsNames: {{ .Values.cert.dnsNames }}
   issuerRef:
-    name: k3s-amethyst-issuer
+    name: {{ .Values.cert.clusterIssuerName }}
     kind: ClusterIssuer
 ...
 # vim: set filetype=yaml

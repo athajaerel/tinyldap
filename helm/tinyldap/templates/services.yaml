@@ -1,0 +1,49 @@
+---
+# this is the headless service used by the statefulset
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-service
+spec:
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: 'SingleStack'
+  ports:
+  - name: ldap
+    port: {{ $.Values.ldap.ldap_port }}
+    protocol: TCP
+    targetPort: 10389
+  - name: ldaps
+    port: {{ $.Values.ldap.ldaps_port }}
+    protocol: TCP
+    targetPort: 10636
+  publishNotReadyAddresses: false
+  selector:
+    app: openldap
+  type: ClusterIP
+  clusterIP: None
+
+# these are extra services to expose the headless service
+{{ range .Values.replicas }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ . }}
+spec:
+  type: LoadBalancer
+  selector:
+    statefulset.kubernetes.io/pod-name: {{ . }}
+  ports:
+  - name: ldap
+    port: {{ $.Values.ldap.ldap_port }}
+    protocol: TCP
+    targetPort: 10389
+  - name: ldaps
+    port: {{ $.Values.ldap.ldaps_port }}
+    protocol: TCP
+    targetPort: 10636
+  publishNotReadyAddresses: false
+{{ end }}
+...
+# vim: set filetype=yaml

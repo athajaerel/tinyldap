@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openldap-conf
+data:
+  ldap.conf: |
+    BASE {{ .Values.ldap.suffix }}
+    URI {{ .Values.ldap.uris }}
+    
+    #SIZELIMIT        12
+    #TIMELIMIT        15
+    #DEREF allow
+    
+    TLS_CACERT        /etc/tls/ca.crt
+  config.bash: |
+    #!/bin/bash
+    set -euxo pipefail
+    
+    CONF='/etc/ldap/slapd.d/cn=config/olcDatabase={1}mdb.ldif'
+    
+    # not the preferred way --- but it's too hard otherwise
+    # two threads in a pod seems to be more than we can manage...
+    # $1: search key
+    # $2: new value
+    conf_replace() {
+    	sed -i -e "s;^$1: .*$;$1: $2;" ${CONF}
+    }
+    
+    # Just enough to bootstrap the database so we can log in as root DN
+    RPWH64=$(<<<"{{ .Values.ldap.rootPwHash }}" base64)
+    conf_replace "olcSuffix" "{{ .Values.ldap.suffix }}"
+    conf_replace "olcRootDN" "{{ .Values.ldap.rootDn }}"
+    conf_replace "olcRootPW:" "${RPWH64}"
+    RULE='to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage'
+    #sed -i -e "/^olcAccess:.{2}.*$/aolcAccess: {3}${RULE}" ${CONF}
+    sed -i -e "/^olcAccess:.*$/d" ${CONF}
+    # TODO: make access rules configurable properly in values.yaml
+    sed -i -e "/^olcSuffix:.*$/aolcAccess: {0}${RULE}" ${CONF}
+    
+    CRC32=$(grep -v ^# ${CONF} | gzip -1 -c | tail -c8 | od -t x4 -N 4 -A n)
+    sed -i -e "s;^# CRC32 .*$;# CRC32${CRC32};" ${CONF}
+...
+# vim: set filetype=yaml
