@@ -1,22 +1,60 @@
 ---
+image: ghcr.io/dreamtrack-net/tinyldap:2024-09-27
+
+# necessary because the Helm template engine sucks
+replicas:
+  - openldap-0
+  - openldap-1
+
 cert:
   dnsNames:
     - "ldap.k3s.lab"
   # detect issuer? not possible, so this must be scripted
   # can we patch in the issuer later?
-  issuerRefName: 'k3s-amethyst-issuer'
+  clusterIssuerName: 'k3s-amethyst-issuer'
+
+# cert secret: openldap-tls
+# configmap name: openldap-conf
+#   keys: ldap.conf, config.ldif
+# pvc: openldap-pvc
+# svc: openldap-service
 
 ldap:
+  organisation: K3S Amethyst
+  description: K3S Amethyst
   suffix: dc=k3s,dc=lab
   rootDn: cn=admin,dc=k3s,dc=lab
+  # dev user passwd
+  rootPwHash: "{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld"
+#"{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
+#  ip_address: '10.20.0.202'
   ldap_port: 389
   ldaps_port: 636
+  uris: ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/
+# wedge: topmost "dc" for organisation. How to get this programatically?
+  wedge: k3s
+# wedge2: users group name
+  wedge2: users
 
-storage:
-  megabytes: 500
+admin:
+  username: zeus
+  userPwHash: "{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
+  homeDir: /mnt/olympus
+  loginShell: /bin/bash
+  gecos: The Almighty
 
-passwords:
-  # b64encode this?
-  admin: "{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
+groups:
+  - users
+  - serviceaccounts
+  - groups
+  - hosts
+
+#tls:
+#  keyfile: /etc/tls/ldaps.key
+#  crtfile: /etc/tls/ldaps.crt
+#  ciphers: SECURE256:+SECURE128:-VERS-TLS-ALL:+VERS-TLS1.2:+VERS-DTLS1.2:-RSA:-DHE-DSS:-CAMELLIA-128-CBC:-CAMELLIA-256-CBC
+
+meta_storage_mb: 256
+data_storage_mb: 2048
 ...
 # vim: set filetype=yaml

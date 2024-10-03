@@ -1,269 +1,129 @@
 ---
+# $ ldapsearch -x -H ldap://ldap.k3s.lab/ -b dc=admin,dc=k3s,dc=lab -D "cn=admin,dc=k3s,dc=lab" -W
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: openldap-statefulset
+  name: openldap
 spec:
-  serviceName: "ldap-statefulset"
-  replicas: 1
-  restartPolicy: Always
+  serviceName: openldap-service
+#  restartPolicy: Always
+  replicas: 2
   selector:
     matchLabels:
-      app: ldap-statefulset
+      app: openldap
   template:
     metadata:
       labels:
-        app: ldap-statefulset
+        app: openldap
     spec:
+      volumes:
+      - name: openldap-tls
+        secret:
+          secretName: openldap-tls
+      - name: openldap-conf
+        configMap:
+          name: openldap-conf
+          items:
+          - key: ldap.conf
+            path: ldap.conf
+#      - name: config-ldif
+#        configMap:
+#          name: openldap-conf
+#          items:
+#          - key: config.ldif
+#            path: config.ldif
+      - name: config-bash
+        configMap:
+          name: openldap-conf
+          items:
+          - key: config.bash
+            path: config.bash
+      initContainers:
+      - name: openldap-copy-defaults-meta
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: openldap-pvc-meta
+          mountPath: /mnt
+        command:
+          - 'bash'
+          - '-c'
+          - 'tar cvpzf - /etc/ldap/slapd.d | tar xpzf - -C /mnt --strip-components=3'
+      - name: openldap-copy-defaults-data
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: openldap-pvc-data
+          mountPath: /mnt
+        command:
+          - 'bash'
+          - '-c'
+          - 'tar cvpzf - /var/lib/ldap | tar xpzf - -C /mnt --strip-components=3'
+      - name: openldap-configure-ldap
+        image: {{ .Values.image }}
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: openldap-pvc-meta
+          mountPath: /etc/ldap/slapd.d
+        - name: openldap-pvc-data
+          mountPath: /var/lib/ldap
+        - name: config-bash
+          mountPath: /opt
+        command:
+          - 'bash'
+          - '-c'
+          - 'bash /opt/config.bash'
       containers:
-      - name: my-app
-        image: nginx
-  volumes:
-  - name: ldap-tls
-    secret:
-      secretName: ldap-tls
-  - name: ldap-pvc
-    persistentVolumeClaim:
-      claimName: ldap-pvc
-
-
-# ldap-admin
-
-
-spec:
-  volumes:
-  - name: krb5-conf
-    configMap:
-      name: krb5
-      items:
-      - key: krb5.conf
-        path: krb5.conf
-#  - name: kdc-conf
-#    configMap:
-#      name: krb5
-#      items:
-#      - key: kdc.conf
-#        path: kdc.conf
-  - name: kadm5-acl
-    configMap:
-      name: krb5
-      items:
-      - key: kadm5.acl
-        path: kadm5.acl
-
-  initContainers:
-  - name: tinykerb-init-1
-    image: localhost/tinykerb-kdc
-    imagePullPolicy: Never
-    envFrom:
-    - configMapRef:
-        name: kerberos-env
-    - configMapRef:
-        name: kerberos-init-env
-    - secretRef:
-        name: kerberos-admin-passwords
-    volumeMounts:
-    - name: krb5-conf
-      mountPath: /etc/krb5kdc
-      readOnly: true
-    - name: database-pvc
-      mountPath: /var/krb5kdc
-      readOnly: false
-    command:
-    - 'bash'
-    - '-c'
-    - '[ -e /var/krb5kdc/principal ] || kdb5_util cr
-eate -r ${REALM} -s -sf ${KRB5_STASH} -P ${PW_MASTER
-}'
-#  - name: tinykerb-init-2
-#    image: localhost/tinykerb-kdc
-#    imagePullPolicy: Never
-#    envFrom:
-#    - configMapRef:
-#        name: kerberos-env
-#    - configMapRef:
-#        name: kerberos-init-env
-#    - secretRef:
-#        name: kerberos-admin-passwords
-#    volumeMounts:
-#    - name: krb5-conf
-#      mountPath: /etc/krb5kdc
-#      readOnly: true
-#    - name: database-pvc
-#      mountPath: /var/krb5kdc
-#      readOnly: false
-#    command:
-#    - 'bash'
-#    - '-c'
-#    - '[ -e ${KRB5_STASH} ] || kdb5_util stash -f $
-{KRB5_STASH}'
-#'kadmin.local -p ${KADM_PRINC} ktadd -k ${KRB5_KTNA
-ME}'
-  containers:
-  - name: tinykerb-kdc-container
-    image: localhost/tinykerb-kdc
-    imagePullPolicy: Never
-    envFrom:
-    - configMapRef:
-        name: kerberos-env
-    volumeMounts:
-    - name: krb5-conf
-      mountPath: /etc/krb5kdc
-      readOnly: true
-#    - name: kdc-conf
-#      mountPath: /etc/krb5kdc
-#      readOnly: true
-    - name: kadm5-acl
-      mountPath: /var
-      readOnly: true
-    - name: tls-certs-secret
-      mountPath: /etc/tls
-      readOnly: true
-    - name: database-pvc
-      mountPath: /var/krb5kdc
-      readOnly: false
-#  - name: tinykerb-kadmind-container
-#    image: tinykerb-kadmind
-#    imagePullPolicy: IfNotPresent
-#    envFrom:
-#    - configMapRef:
-#        name: kerberos-env
-#    volumeMounts:
-#    - name: shared-data
-#      mountPath: /var/krb5kdc
-#    - name: krb5-conf
-#      mountPath: /etc
-#    - name: kdc-conf
-#      mountPath: /etc/krb5kdc
-#    - name: kadm5-acl
-#      mountPath: /var/krb5kdc
-
-
-
-
-
-#---
-#apiVersion: v1
-#kind: Pod
-#metadata:
-#  name: openldap-pod
-#spec:
-#  restartPolicy: Always
-#  volumes:
-#  - name: krb5-conf
-#    configMap:
-#      name: krb5
-#      items:
-#      - key: krb5.conf
-#        path: krb5.conf
-##  - name: kdc-conf
-##    configMap:
-##      name: krb5
-##      items:
-##      - key: kdc.conf
-##        path: kdc.conf
-#  - name: kadm5-acl
-#    configMap:
-#      name: krb5
-#      items:
-#      - key: kadm5.acl
-#        path: kadm5.acl
-#  - name: tls-certs-secret
-#    secret:
-#      secretName: kerberos-tls
-#  - name: database-pvc
-#    persistentVolumeClaim:
-#      claimName: kerberos-database-pvc
-#  initContainers:
-#  - name: tinykerb-init-1
-#    image: localhost/tinykerb-kdc
-#    imagePullPolicy: Never
-#    envFrom:
-#    - configMapRef:
-#        name: kerberos-env
-#    - configMapRef:
-#        name: kerberos-init-env
-#    - secretRef:
-#        name: kerberos-admin-passwords
-#    volumeMounts:
-#    - name: krb5-conf
-#      mountPath: /etc/krb5kdc
-#      readOnly: true
-#    - name: database-pvc
-#      mountPath: /var/krb5kdc
-#      readOnly: false
-#    command:
-#    - 'bash'
-#    - '-c'
-#    - '[ -e /var/krb5kdc/principal ] || kdb5_util cr
-#eate -r ${REALM} -s -sf ${KRB5_STASH} -P ${PW_MASTER
-#}'
-##  - name: tinykerb-init-2
-##    image: localhost/tinykerb-kdc
-##    imagePullPolicy: Never
-##    envFrom:
-##    - configMapRef:
-##        name: kerberos-env
-##    - configMapRef:
-##        name: kerberos-init-env
-##    - secretRef:
-##        name: kerberos-admin-passwords
-##    volumeMounts:
-##    - name: krb5-conf
-##      mountPath: /etc/krb5kdc
-##      readOnly: true
-##    - name: database-pvc
-##      mountPath: /var/krb5kdc
-##      readOnly: false
-##    command:
-##    - 'bash'
-##    - '-c'
-##    - '[ -e ${KRB5_STASH} ] || kdb5_util stash -f $
-#{KRB5_STASH}'
-##'kadmin.local -p ${KADM_PRINC} ktadd -k ${KRB5_KTNA
-#ME}'
-#  containers:
-#  - name: tinykerb-kdc-container
-#    image: localhost/tinykerb-kdc
-#    imagePullPolicy: Never
-#    envFrom:
-#    - configMapRef:
-#        name: kerberos-env
-#    volumeMounts:
-#    - name: krb5-conf
-#      mountPath: /etc/krb5kdc
-#      readOnly: true
-#    - name: kdc-conf
-#      mountPath: /etc/krb5kdc
-##      readOnly: true
-#    - name: kadm5-acl
-#      mountPath: /var
-#      readOnly: true
-#    - name: tls-certs-secret
-#      mountPath: /etc/tls
-#      readOnly: true
-# #   - name: database-pvc
-# ##     mountPath: /var/krb5kdc
-#      readOnly: false
-##  - name: tinykerb-kadmind-container
-##    image: tinykerb-kadmind
-##    imagePullPolicy: IfNotPresent
-##    envFrom:
-##    - configMapRef:
-##        name: kerberos-env
-##    volumeMounts:
-##    - name: shared-data
-##      mountPath: /var/krb5kdc
-##    - name: krb5-conf
-##      mountPath: /etc
-##    - name: kdc-conf
-##      mountPath: /etc/krb5kdc
-##    - name: kadm5-acl
-##      mountPath: /var/krb5kdc
-#...
-## vim: set filetype=yaml
-
-
-
+      - name: openldap
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10389
+          name: ldap
+        - containerPort: 10636
+          name: ldaps
+        volumeMounts:
+        - name: openldap-conf
+          mountPath: /etc/ldap
+        - name: openldap-pvc-meta
+          mountPath: /etc/ldap/slapd.d
+        - name: openldap-pvc-data
+          mountPath: /var/lib/ldap
+        - name: openldap-tls
+          mountPath: /etc/tls
+          readOnly: true
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -ec
+            - ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
+          failureThreshold: 2
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+  volumeClaimTemplates:
+  - metadata:
+      name: openldap-pvc-meta
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.meta_storage_mb }}Mi
+  - metadata:
+      name: openldap-pvc-data
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.data_storage_mb }}Mi
 ...
 # vim: set filetype=yaml

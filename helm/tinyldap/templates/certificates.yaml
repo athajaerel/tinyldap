@@ -7,7 +7,7 @@ spec:
   secretName: openldap-tls
   dnsNames: {{ .Values.cert.dnsNames }}
   issuerRef:
-    name: {{ .Values.cert.issuerRefName }}
+    name: {{ .Values.cert.clusterIssuerName }}
     kind: ClusterIssuer
 ...
 # vim: set filetype=yaml
