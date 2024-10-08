@@ -1,18 +1,19 @@
 ---
-image: ghcr.io/dreamtrack-net/tinyldap:2024-10-07
+# Full reference to a Docker image to use for our chart
+image: 'ghcr.io/dreamtrack-net/tinyldap:2024-10-07'
 
 # necessary because the Helm template engine sucks
 replicas:
   - openldap-0
   - openldap-1
 
+# TLS certificate details
 cert:
   dnsNames:
-    - "ldap.k3s.lab"
-  # detect issuer? not possible, so this must be scripted
-  # can we patch in the issuer later?
+    - 'ldap.k3s.lab'
   clusterIssuerName: 'k3s-amethyst-issuer'
 
+# LDAP server details
 ldap:
   suffix: 'dc=k3s,dc=lab'
   organisation: 'K3S Amethyst'
@@ -26,6 +27,7 @@ ldap:
 # wedge2: users group name
   wedge2: users
 
+# Realm admin user
 admin:
   username: zeus
   userPwHash: "{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
@@ -33,12 +35,14 @@ admin:
   loginShell: /bin/bash
   gecos: The Almighty
 
+# Organisational units
 groups:
   - users
   - serviceaccounts
   - groups
   - hosts
 
+# Service ports
 # needs to be JSON-ish, apparently?
 ports: '
 [
@@ -47,6 +51,9 @@ ports: '
 ]
 '
 
+# Pod ports
+# needs to be JSON-ish, apparently?
+# Required storage/Mb for metadata and data
 meta_storage_mb: 256
 data_storage_mb: 2048
 ...

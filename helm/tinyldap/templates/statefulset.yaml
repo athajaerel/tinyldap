@@ -26,12 +26,6 @@ spec:
           items:
           - key: ldap.conf
             path: ldap.conf
-#      - name: config-ldif
-#        configMap:
-#          name: openldap-conf
-#          items:
-#          - key: config.ldif
-#            path: config.ldif
       - name: config-bash
         configMap:
           name: openldap-conf
