@@ -135,6 +135,8 @@ PRUNEFILES="
 /usr/lib/systemd
 /lib/systemd
 /etc/systemd
+/etc/skel
+/etc/sysctl.d
 "
 
 for FILE in ${PRUNEFILES}
