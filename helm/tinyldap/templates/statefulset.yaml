@@ -95,9 +95,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - /bin/sh
-            - -ec
-            - ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
+            - 'bash'
+            - '-ec'
+            - 'ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*'
           failureThreshold: 2
           initialDelaySeconds: 5
           periodSeconds: 5
