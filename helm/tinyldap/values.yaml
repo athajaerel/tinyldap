@@ -18,12 +18,10 @@ ldap:
   description: 'K3S Amethyst'
   rootRdn: 'admin'
   # dev user passwd
-# wedge: topmost "dc" for organisation. How to get this?
-  wedge: k3s
-# wedge2: users group name
-  wedge2: users
   rootPwHash: '{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld'
   uris: 'ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/'
+#  wedge: {{ (split "=" ((split "," $.Values.ldap.suffix)._0))._1 }}  # k3s
+#  wedge2: {{ first $.Values.groups }}  # users
 
 # Realm admin user
 admin:
