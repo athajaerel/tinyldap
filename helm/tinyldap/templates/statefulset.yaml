@@ -71,11 +71,7 @@ spec:
       - name: openldap
         image: {{ .Values.image }}
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 10389
-          name: ldap
-        - containerPort: 10636
-          name: ldaps
+        ports: {{ $.Values.container_ports }}
         volumeMounts:
         - name: openldap-conf
           mountPath: /etc/ldap

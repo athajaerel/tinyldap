@@ -51,6 +51,13 @@ ports: '
 
 # Pod ports
 # needs to be JSON-ish, apparently?
+container_ports: '
+[
+  {containerPort: 10389, name: ldap},
+  {containerPort: 10636, name: ldaps}
+]
+'
+
 # Required storage/Mb for metadata and data
 meta_storage_mb: 256
 data_storage_mb: 2048
