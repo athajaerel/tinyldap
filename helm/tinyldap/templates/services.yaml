@@ -8,15 +8,7 @@ spec:
   ipFamilies:
   - IPv4
   ipFamilyPolicy: 'SingleStack'
-  ports:
-  - name: ldap
-    port: {{ $.Values.ldap.ldap_port }}
-    protocol: TCP
-    targetPort: 10389
-  - name: ldaps
-    port: {{ $.Values.ldap.ldaps_port }}
-    protocol: TCP
-    targetPort: 10636
+  ports: {{ $.Values.ports }}
   publishNotReadyAddresses: false
   selector:
     app: openldap
@@ -24,25 +16,17 @@ spec:
   clusterIP: None
 
 # these are extra services to expose the headless service
-{{ range .Values.replicas }}
+{{ range untilStep 0 (int $.Values.replicas) 1 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ . }}
+  name: openldap-svc-{{ . }}
 spec:
   type: LoadBalancer
   selector:
-    statefulset.kubernetes.io/pod-name: {{ . }}
-  ports:
-  - name: ldap
-    port: {{ $.Values.ldap.ldap_port }}
-    protocol: TCP
-    targetPort: 10389
-  - name: ldaps
-    port: {{ $.Values.ldap.ldaps_port }}
-    protocol: TCP
-    targetPort: 10636
+    statefulset.kubernetes.io/pod-name: openldap-{{ . }}
+  ports: {{ $.Values.ports }}
   publishNotReadyAddresses: false
 {{ end }}
 ...

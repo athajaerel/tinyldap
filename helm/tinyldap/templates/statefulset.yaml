@@ -7,7 +7,7 @@ metadata:
 spec:
   serviceName: openldap-service
 #  restartPolicy: Always
-  replicas: 2
+  replicas: {{ $.Values.replicas }}
   selector:
     matchLabels:
       app: openldap
@@ -26,12 +26,6 @@ spec:
           items:
           - key: ldap.conf
             path: ldap.conf
-#      - name: config-ldif
-#        configMap:
-#          name: openldap-conf
-#          items:
-#          - key: config.ldif
-#            path: config.ldif
       - name: config-bash
         configMap:
           name: openldap-conf
@@ -77,11 +71,7 @@ spec:
       - name: openldap
         image: {{ .Values.image }}
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 10389
-          name: ldap
-        - containerPort: 10636
-          name: ldaps
+        ports: {{ $.Values.container_ports }}
         volumeMounts:
         - name: openldap-conf
           mountPath: /etc/ldap
@@ -95,9 +85,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - /bin/sh
-            - -ec
-            - ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*
+            - 'bash'
+            - '-ec'
+            - 'ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase=\*'
           failureThreshold: 2
           initialDelaySeconds: 5
           periodSeconds: 5
