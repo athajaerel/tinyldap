@@ -2,10 +2,8 @@
 # Full reference to a Docker image to use for our chart
 image: 'ghcr.io/dreamtrack-net/tinyldap:2024-10-07'
 
-# necessary because the Helm template engine sucks
-replicas:
-  - openldap-0
-  - openldap-1
+# Number of pods Statefulset will spin up
+replicas: 2
 
 # TLS certificate details
 cert:

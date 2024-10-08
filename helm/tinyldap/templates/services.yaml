@@ -16,16 +16,16 @@ spec:
   clusterIP: None
 
 # these are extra services to expose the headless service
-{{ range .Values.replicas }}
+{{ range untilStep 0 (int $.Values.replicas) 1 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ . }}
+  name: openldap-svc-{{ . }}
 spec:
   type: LoadBalancer
   selector:
-    statefulset.kubernetes.io/pod-name: {{ . }}
+    statefulset.kubernetes.io/pod-name: openldap-{{ . }}
   ports: {{ $.Values.ports }}
   publishNotReadyAddresses: false
 {{ end }}
