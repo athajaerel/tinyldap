@@ -14,10 +14,10 @@ cert:
   clusterIssuerName: 'k3s-amethyst-issuer'
 
 ldap:
-  organisation: K3S Amethyst
-  description: K3S Amethyst
-  suffix: dc=k3s,dc=lab
-  rootDn: cn=admin,dc=k3s,dc=lab
+  suffix: 'dc=k3s,dc=lab'
+  organisation: 'K3S Amethyst'
+  description: 'K3S Amethyst'
+  rootRdn: 'admin'
   # dev user passwd
   rootPwHash: "{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld"
   uris: ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/

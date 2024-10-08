@@ -30,7 +30,7 @@ data:
     # Just enough to bootstrap the database so we can log in as root DN
     RPWH64=$(<<<"{{ .Values.ldap.rootPwHash }}" base64)
     conf_replace "olcSuffix" "{{ .Values.ldap.suffix }}"
-    conf_replace "olcRootDN" "{{ .Values.ldap.rootDn }}"
+    conf_replace "olcRootDN" "cn={{ .Values.ldap.rootRdn }},{{ .Values.ldap.suffix }}"
     conf_replace "olcRootPW:" "${RPWH64}"
     RULE='to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage'
     #sed -i -e "/^olcAccess:.{2}.*$/aolcAccess: {3}${RULE}" ${CONF}
