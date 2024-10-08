@@ -1,5 +1,5 @@
 ---
-image: ghcr.io/dreamtrack-net/tinyldap:2024-09-27
+image: ghcr.io/dreamtrack-net/tinyldap:2024-10-07
 
 # necessary because the Helm template engine sucks
 replicas:
