@@ -28,8 +28,6 @@ ldap:
   rootPwHash: "{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld"
 #"{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
 #  ip_address: '10.20.0.202'
-  ldap_port: 389
-  ldaps_port: 636
   uris: ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/
 # wedge: topmost "dc" for organisation. How to get this programatically?
   wedge: k3s
@@ -53,6 +51,13 @@ groups:
 #  keyfile: /etc/tls/ldaps.key
 #  crtfile: /etc/tls/ldaps.crt
 #  ciphers: SECURE256:+SECURE128:-VERS-TLS-ALL:+VERS-TLS1.2:+VERS-DTLS1.2:-RSA:-DHE-DSS:-CAMELLIA-128-CBC:-CAMELLIA-256-CBC
+# needs to be JSON-ish, apparently?
+ports: '
+[
+  {name: ldap, port: 389, protocol: TCP, targetPort: 10389},
+  {name: ldaps, port: 636, protocol: TCP, targetPort: 10636}
+]
+'
 
 meta_storage_mb: 256
 data_storage_mb: 2048
