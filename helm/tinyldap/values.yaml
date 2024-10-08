@@ -13,12 +13,6 @@ cert:
   # can we patch in the issuer later?
   clusterIssuerName: 'k3s-amethyst-issuer'
 
-# cert secret: openldap-tls
-# configmap name: openldap-conf
-#   keys: ldap.conf, config.ldif
-# pvc: openldap-pvc
-# svc: openldap-service
-
 ldap:
   organisation: K3S Amethyst
   description: K3S Amethyst
@@ -26,10 +20,8 @@ ldap:
   rootDn: cn=admin,dc=k3s,dc=lab
   # dev user passwd
   rootPwHash: "{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld"
-#"{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV"
-#  ip_address: '10.20.0.202'
   uris: ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/
-# wedge: topmost "dc" for organisation. How to get this programatically?
+# wedge: topmost "dc" for organisation. How to get this?
   wedge: k3s
 # wedge2: users group name
   wedge2: users
@@ -47,10 +39,6 @@ groups:
   - groups
   - hosts
 
-#tls:
-#  keyfile: /etc/tls/ldaps.key
-#  crtfile: /etc/tls/ldaps.crt
-#  ciphers: SECURE256:+SECURE128:-VERS-TLS-ALL:+VERS-TLS1.2:+VERS-DTLS1.2:-RSA:-DHE-DSS:-CAMELLIA-128-CBC:-CAMELLIA-256-CBC
 # needs to be JSON-ish, apparently?
 ports: '
 [
