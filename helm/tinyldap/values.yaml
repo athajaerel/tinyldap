@@ -1,6 +1,6 @@
 ---
 # Full reference to a Docker image to use for our chart
-image: 'ghcr.io/dreamtrack-net/tinyldap:2024-10-07'
+image: 'ghcr.io/dreamtrack-net/tinyldap:2024-10-09'
 
 # Number of pods Statefulset will spin up
 replicas: 2
@@ -16,6 +16,7 @@ ldap:
   suffix: 'dc=k3s,dc=lab'
   organisation: 'K3S Amethyst'
   description: 'K3S Amethyst'
+  # Rdn = relative DN (it probably should be cn=admin to be called that though)
   rootRdn: 'admin'
   # dev user passwd
   rootPwHash: '{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld'
