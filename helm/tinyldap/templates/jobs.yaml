@@ -1,0 +1,37 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: slapd-bootstrap
+spec:
+  template:
+    spec:
+      # Thanks to https://vincentdeborger.be/blog/using-initcontainers-to-create-dependencies-on-pods
+      # for this trick
+      initContainers:
+        - name: wait-for-pod
+          image: kubectl
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until kubectl -n openldap-system wait --for=condition=Ready pods -l app=openldap --timeout=300s; do
+                sleep 5;
+                echo 'Waiting for slapd...';
+              done
+      containers:
+        - name: inject-tls
+          image: {{ .Values.image }}
+          env:
+          - name: REPLICAS
+            value: {{ .Values.replicas }}
+          command:
+            - |
+              # add ldifs into ConfigMaps, apply to ach replica --- tricky without working DNS
+#        - name: pi
+#          image: perl:5.34.0
+#          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never
+  backoffLimit: 4
+...
+# vim: set filetype=yaml
