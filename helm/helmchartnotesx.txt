@@ -1,0 +1,2 @@
+# $ ldapsearch -x -H ldap://ldap.k3s.lab/ -b dc=admin,dc=k3s,dc=lab -D "cn=admin,dc=k3s,dc=lab" -W
+

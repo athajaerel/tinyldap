@@ -3,15 +3,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: openldap-service
+  name: ldap-svc-ss
 spec:
   ipFamilies:
   - IPv4
   ipFamilyPolicy: 'SingleStack'
-  ports: {{ $.Values.ports }}
+  ports:
+    - name: ldap
+      port: 389
+      protocol: TCP
+      targetPort: 10389
+    - name: ldaps
+      port: 636
+      protocol: TCP
+      targetPort: 10636
   publishNotReadyAddresses: false
   selector:
-    app: openldap
+    app: ldap
   type: ClusterIP
   clusterIP: None
 
@@ -21,13 +29,23 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: openldap-svc-{{ . }}
+  name: ldap-svc-{{ . }}
+  labels:
+    type: lb
 spec:
   type: LoadBalancer
   selector:
-    statefulset.kubernetes.io/pod-name: openldap-{{ . }}
-  ports: {{ $.Values.ports }}
+    statefulset.kubernetes.io/pod-name: ldap-{{ . }}
+  ports:
+    - name: ldap
+      port: 389
+      protocol: TCP
+      targetPort: 10389
+    - name: ldaps
+      port: 636
+      protocol: TCP
+      targetPort: 10636
   publishNotReadyAddresses: false
-{{ end }}
+{{- end }}
 ...
 # vim: set filetype=yaml

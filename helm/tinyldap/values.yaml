@@ -1,64 +1,46 @@
 ---
-# Full reference to a Docker image to use for our chart
-image: 'ghcr.io/dreamtrack-net/tinyldap:2024-10-09'
-
+## User configurable settings ##########################################
 # Number of pods Statefulset will spin up
 replicas: 2
 
-# TLS certificate details
-cert:
-  dnsNames:
-    - 'ldap.k3s.lab'
-  clusterIssuerName: 'k3s-amethyst-issuer'
+# Domain (LDAP suffix will be generated from this)
+domain: 'k3s.lab'
 
-# LDAP server details
-ldap:
-  suffix: 'dc=k3s,dc=lab'
-  organisation: 'K3S Amethyst'
+# Organisation details
+organisation:
+  name: 'K3S Amethyst'
   description: 'K3S Amethyst'
-  # Rdn = relative DN (it probably should be cn=admin to be called that though)
-  rootRdn: 'admin'
-  # dev user passwd
-  rootPwHash: '{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld'
-  uris: 'ldap://ldap.k3s.lab/ ldaps://ldap.k3s.lab/'
-#  wedge: {{ (split "=" ((split "," $.Values.ldap.suffix)._0))._1 }}  # k3s
-#  wedge2: {{ first $.Values.groups }}  # users
 
-# Realm admin user
-admin:
-  username: 'zeus'
+realmAdmin:
+  name: 'zeus'
   userPwHash: '{SSHA}JWA/xti9Me/iEt8hKqFBV6JcO6BWTKlV'
   homeDir: '/mnt/olympus'
   loginShell: '/bin/bash'
   gecos: 'The Almighty'
 
-# Organisational units
-groups:
-  - 'users'
-  - 'serviceaccounts'
-  - 'groups'
-  - 'hosts'
+# Online config (OLC) admin
+olcAdmin:
+  # It should be cn=admin to be a proper Rdn, but eh.
+  rootRdn: 'admin'
+  # Hint: dev user password
+  rootPwHash: '{SSHA}gSIuDVYLAQmbamahlILBugabdWE7Q5ld'
 
-# Service ports
-# needs to be JSON-ish, apparently?
-ports: '
-[
-  {name: ldap, port: 389, protocol: TCP, targetPort: 10389},
-  {name: ldaps, port: 636, protocol: TCP, targetPort: 10636}
-]
-'
+# OLC TLS certificate details
+olcTLS:
+  # use this to make ldap.{domain}, ldap-0.{domain} and ldap-1.{domain},
+  # etc for more replicas
+  dnsNamePrefix: 'ldap'
+  clusterIssuerName: 'k3s-amethyst-issuer'
 
-# Pod ports
-# needs to be JSON-ish, apparently?
-container_ports: '
-[
-  {containerPort: 10389, name: ldap},
-  {containerPort: 10636, name: ldaps}
-]
-'
-
+## Probably no need to change anything after this line #################
 # Required storage/Mb for metadata and data
 meta_storage_mb: 256
 data_storage_mb: 2048
+
+userOuRdn: 'ou=users'
+extraOus:
+  - 'serviceaccounts'
+  - 'groups'
+  - 'hosts'
 ...
 # vim: set filetype=yaml

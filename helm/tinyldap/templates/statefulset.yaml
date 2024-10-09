@@ -1,85 +1,83 @@
 ---
-# $ ldapsearch -x -H ldap://ldap.k3s.lab/ -b dc=admin,dc=k3s,dc=lab -D "cn=admin,dc=k3s,dc=lab" -W
+{{- $image := "ghcr.io/dreamtrack-net/tinyldap:2024-10-09" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: openldap
+  name: ldap-ss
 spec:
-  serviceName: openldap-service
-#  restartPolicy: Always
+  serviceName: ldap-svc-ss
+  restartPolicy: Always
   replicas: {{ $.Values.replicas }}
   selector:
     matchLabels:
-      app: openldap
+      app: ldap
+  volumeClaimTemplates:
+  - metadata:
+      name: vc-ldap-meta
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.meta_storage_mb }}Mi
+  - metadata:
+      name: vc-ldap-data
+    spec:
+      storageClassName: longhorn
+      accessModes:
+      - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: {{ .Values.data_storage_mb }}Mi
   template:
     metadata:
       labels:
-        app: openldap
+        app: ldap
     spec:
       volumes:
-      - name: openldap-tls
+      # certificates.yaml
+      - name: vol-ldap-tls
         secret:
-          secretName: openldap-tls
-      - name: openldap-conf
+          secretName: ldap-tls
+      # configMaps.yaml
+      - name: vol-ldap-conf
         configMap:
-          name: openldap-conf
+          name: cm-ldap-conf
           items:
           - key: ldap.conf
             path: ldap.conf
-      - name: config-bash
-        configMap:
-          name: openldap-conf
-          items:
-          - key: config.bash
-            path: config.bash
-      initContainers:
-      - name: openldap-copy-defaults-meta
-        image: {{ .Values.image }}
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: openldap-pvc-meta
-          mountPath: /mnt
-        command:
-          - 'bash'
-          - '-c'
-          - 'tar cvpzf - /etc/ldap/slapd.d | tar xpzf - -C /mnt --strip-components=3'
-      - name: openldap-copy-defaults-data
-        image: {{ .Values.image }}
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: openldap-pvc-data
-          mountPath: /mnt
-        command:
-          - 'bash'
-          - '-c'
-          - 'tar cvpzf - /var/lib/ldap | tar xpzf - -C /mnt --strip-components=3'
-      - name: openldap-configure-ldap
-        image: {{ .Values.image }}
-        imagePullPolicy: Never
-        volumeMounts:
-        - name: openldap-pvc-meta
-          mountPath: /etc/ldap/slapd.d
-        - name: openldap-pvc-data
-          mountPath: /var/lib/ldap
-        - name: config-bash
-          mountPath: /opt
-        command:
-          - 'bash'
-          - '-c'
-          - 'bash /opt/config.bash'
+      # Thanks to https://vincentdeborger.be/blog/using-initcontainers-to-create-dependencies-on-pods
+      # for this trick
+      # initContainer: wait for initDone=true
+      #initContainers:
+      #  - name: wait-for-init-flag
+      #    image: kubectl
+      #    command:
+      #      - /bin/sh
+      #      - -c
+      #      - |
+      #        until kubectl -n openldap-system wait --for=condition=Ready pods -l app=openldap --timeout=300s; do
+      #          sleep 5;
+      #          echo 'Waiting for slapd...';
+      #        done
       containers:
       - name: openldap
-        image: {{ .Values.image }}
+        image: {{ $image }}
         imagePullPolicy: IfNotPresent
-        ports: {{ $.Values.container_ports }}
+        ports:
+        - name: ldap
+          containerPort: 10389
+        - name: ldaps
+          containerPort: 10636
         volumeMounts:
-        - name: openldap-conf
+        - name: vol-ldap-conf
           mountPath: /etc/ldap
-        - name: openldap-pvc-meta
+        - name: vc-ldap-meta
           mountPath: /etc/ldap/slapd.d
-        - name: openldap-pvc-data
+        - name: vc-ldap-data
           mountPath: /var/lib/ldap
-        - name: openldap-tls
+        - name: vol-ldap-tls
           mountPath: /etc/tls
           readOnly: true
         readinessProbe:
@@ -94,26 +92,6 @@ spec:
           successThreshold: 1
           timeoutSeconds: 3
       dnsPolicy: ClusterFirst
-      restartPolicy: Always
       schedulerName: default-scheduler
-  volumeClaimTemplates:
-  - metadata:
-      name: openldap-pvc-meta
-    spec:
-      storageClassName: longhorn
-      accessModes:
-      - 'ReadWriteOnce'
-      resources:
-        requests:
-          storage: {{ .Values.meta_storage_mb }}Mi
-  - metadata:
-      name: openldap-pvc-data
-    spec:
-      storageClassName: longhorn
-      accessModes:
-      - 'ReadWriteOnce'
-      resources:
-        requests:
-          storage: {{ .Values.data_storage_mb }}Mi
 ...
 # vim: set filetype=yaml

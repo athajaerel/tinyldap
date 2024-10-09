@@ -1,18 +1,17 @@
 ---
+{{- $suffix := (concat (list "dc=") (list (($.Values.domain | splitList "." | join ",dc=") | join "")) | join "") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openldap-conf
+  name: cm-ldap-conf
 data:
   ldap.conf: |
-    BASE {{ .Values.ldap.suffix }}
-    URI {{ .Values.ldap.uris }}
-    
-    #SIZELIMIT        12
-    #TIMELIMIT        15
-    #DEREF allow
-    
-    TLS_CACERT        /etc/tls/ca.crt
+    BASE {{ $suffix }}
+    URI ldapi:///
+    SIZELIMIT 50
+    TIMELIMIT 10
+    DEREF never
+
   config.bash: |
     #!/bin/bash
     set -euxo pipefail
@@ -28,9 +27,9 @@ data:
     }
     
     # Just enough to bootstrap the database so we can log in as root DN
-    RPWH64=$(<<<"{{ .Values.ldap.rootPwHash }}" base64)
-    conf_replace "olcSuffix" "{{ .Values.ldap.suffix }}"
-    conf_replace "olcRootDN" "cn={{ .Values.ldap.rootRdn }},{{ .Values.ldap.suffix }}"
+    RPWH64=$(<<<"{{ $.Values.olcAdmin.rootPwHash }}" base64)
+    conf_replace "olcSuffix" "{{ $suffix }}"
+    conf_replace "olcRootDN" "cn={{ $.Values.olcAdmin.rootRdn }},{{ $suffix }}"
     conf_replace "olcRootPW:" "${RPWH64}"
     RULE='to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage'
     #sed -i -e "/^olcAccess:.{2}.*$/aolcAccess: {3}${RULE}" ${CONF}
@@ -40,5 +39,27 @@ data:
     
     CRC32=$(grep -v ^# ${CONF} | gzip -1 -c | tail -c8 | od -t x4 -N 4 -A n)
     sed -i -e "s;^# CRC32 .*$;# CRC32${CRC32};" ${CONF}
+    
+    CONF='/etc/ldap/slapd.d/cn=config/olcDatabase={0}config.ldif'
+    sed -i -e "s/olcRootDN: cn=admin,cn=config/&\nolcRootPW:: ${RPWH64}/" ${CONF}
+    
+    CRC32=$(grep -v ^# ${CONF} | gzip -1 -c | tail -c8 | od -t x4 -N 4 -A n)
+    sed -i -e "s;^# CRC32 .*$;# CRC32${CRC32};" ${CONF}
+
+  tls.ldif: |
+    dn: cn=config
+    changetype: modify
+    add: olcTLSCACertificateFile
+    olcTLSCACertificateFile: /etc/tls/ca.crt
+    
+    dn: cn=config
+    changetype: modify
+    add: olcTLSCertificateKeyFile
+    olcTLSCertificateKeyFile: /etc/tls/tls.key
+    
+    dn: cn=config
+    changetype: modify
+    add: olcTLSCertificateFile
+    olcTLSCertificateFile: /etc/tls/tls.crt
 ...
 # vim: set filetype=yaml
