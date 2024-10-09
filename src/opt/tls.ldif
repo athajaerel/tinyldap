@@ -13,7 +13,7 @@ delete: olcTLSCertificateKeyFile
 dn: cn=config
 changetype: modify
 add: olcTLSCertificateKeyFile
-olcTLSCertificateKeyFile: /etc/tls/ldaps.key
+olcTLSCertificateKeyFile: /etc/tls/tls.key
 
 dn: cn=config
 changetype: modify
@@ -22,7 +22,7 @@ delete: olcTLSCertificateFile
 dn: cn=config
 changetype: modify
 add: olcTLSCertificateFile
-olcTLSCertificateFile: /etc/tls/ldaps.crt
+olcTLSCertificateFile: /etc/tls/tls.crt
 
 # OpenSSL format
 #dn: cn=config

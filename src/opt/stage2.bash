@@ -109,8 +109,8 @@ done
 EXTRAFILES="
 /etc/ldap/ldap.conf
 /etc/ldap/slapd.d
-/etc/tls/ldaps.crt
-/etc/tls/ldaps.key
+/etc/tls/tls.crt
+/etc/tls/tls.key
 /opt/install.bash
 /opt/basic_infra.ldif
 /opt/config.ldif

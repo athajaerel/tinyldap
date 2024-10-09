@@ -18,11 +18,11 @@ ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 COPY src/ /
 
 RUN mkdir -p /etc/tls
-RUN botan keygen >/etc/tls/ldaps.key
-RUN botan gen_self_signed /etc/tls/ldaps.key localhost \
+RUN botan keygen >/etc/tls/tls.key
+RUN botan gen_self_signed /etc/tls/tls.key localhost \
 	--dns=localhost \
 	--dns=ldap.k3s.lab \
-	>/etc/tls/ldaps.crt
+	>/etc/tls/tls.crt
 
 COPY slapd.d /etc/ldap/
 

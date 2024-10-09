@@ -17,6 +17,8 @@ tinyldap: BUILD_FLAGS := \
 		--tag="$(IMAGE):$(NOW)" \
 		--log-level=info
 
+# Replace --layers=true with --squash-all in final release build?
+
 tinyldap:
 	podman build $(BUILD_FLAGS) \
 		-f=Containerfile \
